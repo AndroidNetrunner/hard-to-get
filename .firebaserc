@@ -1,0 +1,16 @@
+{
+  "projects": {
+    "default": "hard-to-get-994d6"
+  },
+  "targets": {
+    "hard-to-get-994d6": {
+      "hosting": {
+        "play-hardtoget": [
+          "play-hardtoget"
+        ]
+      }
+    }
+  },
+  "etags": {},
+  "dataconnectEmulatorConfig": {}
+}
