@@ -132,7 +132,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useGameStore } from "@/store/game";
-import { ref as dbRef, getDatabase, set, update } from "firebase/database";
+import { ref as dbRef, getDatabase, set, update, runTransaction } from "firebase/database";
 import { useUserStore } from "@/store/user";
 import { shuffle } from "lodash";
 import { database } from "@/firebase";
@@ -272,12 +272,20 @@ const excludeWord = async () => {
 };
 
 const markWordReady = () => {
-  const db = getDatabase();
-  const roomRef = dbRef(db, `rooms/${roomId}`);
-  const answerWord = shuffle(gameStore.wordCards)[0];
-  update(roomRef, {
-    wordReady: true,
-    answerWord,
+  const roomRef = dbRef(database, `rooms/${roomId}`);
+  runTransaction(roomRef, (currentData) => {
+    if (currentData) {
+      // Check if the answer word has already been set.
+      if (!currentData.answerWord) {
+        // If not, shuffle the cards and pick one.
+        const answerWord = shuffle(currentData.wordCards)[0];
+        currentData.answerWord = answerWord;
+      }
+      // Mark the game as ready.
+      currentData.wordReady = true;
+      return currentData;
+    }
+    return currentData; // Abort transaction if no data
   });
 };
 
@@ -287,38 +295,6 @@ const setWitness = () => {
   }
 };
 
-const startGame = async () => {
-  try {
-    const wordResponse = await fetch("/assets/words.txt");
-    const wordText = await wordResponse.text();
-    const wordList = wordText
-      .split("\n")
-      .map((word) => word.trim())
-      .filter((word) => word);
-
-    const selectedWords = shuffle(wordList).slice(0, 16);
-    const answerWord = shuffle(selectedWords)[0];
-    gameStore.setAnswerWord(answerWord);
-
-    const dilemmaResponse = await fetch("/assets/dilemmas.txt");
-    const dilemmaText = await dilemmaResponse.text();
-    const dilemmaList = dilemmaText
-      .split("\n")
-      .map((dilemma) => dilemma.trim())
-      .filter((dilemma) => dilemma);
-
-    const selectedDilemmas = shuffle(dilemmaList).slice(0, 5);
-    gameStore.setDilemma(selectedDilemmas);
-
-    await update(roomRef, {
-      wordCards: selectedWords,
-      dilemmaCards: selectedDilemmas,
-      wordReady: false,
-    });
-  } catch (error) {
-    console.error("Error starting game:", error);
-  }
-};
 
 const replaceWord = async (oldWord: string) => {
   console.log("oldWord:", oldWord);
