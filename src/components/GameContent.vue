@@ -132,7 +132,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { useGameStore } from "@/store/game";
-import { ref as dbRef, getDatabase, set, update, runTransaction } from "firebase/database";
+import {
+  ref as dbRef,
+  getDatabase,
+  set,
+  update,
+  runTransaction,
+} from "firebase/database";
 import { useUserStore } from "@/store/user";
 import { shuffle } from "lodash";
 import { database } from "@/firebase";
@@ -294,7 +300,6 @@ const setWitness = () => {
     gameStore.setIsWitness(true);
   }
 };
-
 
 const replaceWord = async (oldWord: string) => {
   console.log("oldWord:", oldWord);
